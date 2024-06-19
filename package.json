@@ -1,4 +1,10 @@
 {
+  "name": "tasel-backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
     "axios": "^1.6.7",
     "bcrypt": "^5.1.1",
