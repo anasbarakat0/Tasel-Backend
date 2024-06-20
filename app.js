@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
@@ -14,7 +15,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, './uploads')))
 app.use(bodyparser.json());
 app.use(bodyparser.urlencoded({ extended: true }));
-
+app.use(cors());
 
 mongoose.connect('mongodb+srv://ghaithbirkdar:c4a@cluster0.jb1c741.mongodb.net/dalelcom?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
