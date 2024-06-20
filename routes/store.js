@@ -12,14 +12,14 @@ const { profile } = require('console');
 const secretkey = '1234';
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dest = path.join(__dirname, "../uploads"); // تأكد من أن المسار صحيح وأن المجلد موجود
+  destination: (_req, _file, cb) => {
+    const dest = path.join(__dirname, "../uploads"); 
     cb(null, dest);
   },
-  filename: (req, file, cb) => {
-    const uniquename = `${Date.now()}-${Math.round(Math.random() * 1E9)}`; // استخدم Math.random() لتوليد رقم عشوائي
+  filename: (_req, file, cb) => {
+    const uniquename = `${Date.now()}-${Math.round(Math.random() * 1E9)}`; 
     const ext = path.extname(file.originalname);
-    cb(null, `${uniquename}${ext}`); // استخدم القوالب النصية لدمج الاسم الفريد والامتداد
+    cb(null, `${uniquename}${ext}`); 
   }
 });
 
@@ -90,6 +90,10 @@ const storeSchema = new mongoose.Schema({
       type: String,
       required: false
     },
+    isVisible: {
+      type: Boolean,
+      default: true 
+    },
     password: String
   });
 
@@ -107,14 +111,14 @@ const Product = mongoose.model('Product', productSchema);
 router.post('/signup/store',upload.single('profileImage'), async (req, res) => {
     try {
       const {
-        name, latitude, longitude, phoneNumbers, landlines, areaName, streetName, buildingNameorNumber, floor, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, password,
+        name, latitude, longitude, phoneNumbers, landlines, areaName, streetName, buildingNameorNumber, floor, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, password
       } = req.body;
   
-      if (!password || !phoneNumbers || !email || !areaName  || !streetName  ||  !buildingNameorNumber || !whatsappNumber ) {
+      if (!password || !phoneNumbers || !email || !whatsappNumber ) {
         return res.status(400).send({ error: 'الهاتف والبريد الإلكتروني وكلمة المرور مطلوبة' });
       }
   
-      const existingStore = await Store.findOne({ $or: [{ email }, { phoneNumbers }, {areaName}, {streetName}, {buildingNameorNumber}, {whatsappNumber}] });
+      const existingStore = await Store.findOne({ $or: [{ email }, { phoneNumbers }, {whatsappNumber}] });
       if (existingStore) {
         return res.status(400).send({ error: 'البريد الإلكتروني أو الهاتف موجود بالفعل' });
       }
@@ -134,7 +138,7 @@ router.post('/signup/store',upload.single('profileImage'), async (req, res) => {
 
 
       const store = new Store({
-        profileImage:req.file.path, name, latitude, longitude, phoneNumbers, landlines, address, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, password: hashedPassword,
+        profileImage:req.file.path, name, latitude, longitude, phoneNumbers, landlines, address, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, isVisible: true, password: hashedPassword,
       });
   
       await store.save();
@@ -166,8 +170,8 @@ router.post('/login/store', async (req, res) => {
   // show all stores
 router.get('/stores', async (req,res)=>{
   try{
-      const stores=await Store.find({}).select('-password');
-      res.status(200).json({'data':stores});
+      const visiblestores=await Store.find({ isVisible: true }).select('-password');
+      res.status(200).json({'data':visiblestores});
   }catch (error){
       res.status(500).json({message:error.message})
   }
@@ -200,15 +204,20 @@ router.put('/stores/:storeId',storeAuth, async (req, res) => {
 // Get Store by ID
 router.get('/store/:id', async (req, res) => {
   try {
-      const store = await Store.findById(req.params.id);
-      if (!store) {
-          return res.status(404).send();
-      }
-      res.send(store);
+    const store = await Store.findById(req.params.id);
+    if (!store) {
+      return res.status(404).send();
+    }
+   
+    if (!store.isVisible) {
+      return res.status(403).send('Store is not visible.');
+    }
+    res.send(store);
   } catch (err) {
-      res.status(500).send(err);
+    res.status(500).send(err);
   }
 });
+
 
 // Delete Store
 router.delete('/store/:id', async (req, res) => {
