@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const multer = require('multer');
@@ -8,15 +8,15 @@ const router = express.Router();
 const storeAuth = require('../middleware/store.auth');
 const userAuth = require('../middleware/user.auth');
 const { type } = require('os');
-const { profile } = require('console');
+const { profile, error } = require('console');
 const secretkey = '1234';
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
+  destination: (req, file, cb) => {
     const dest = path.join(__dirname, "../uploads"); 
     cb(null, dest);
   },
-  filename: (_req, file, cb) => {
+  filename: (req, file, cb) => {
     const uniquename = `${Date.now()}-${Math.round(Math.random() * 1E9)}`; 
     const ext = path.extname(file.originalname);
     cb(null, `${uniquename}${ext}`); 
@@ -27,10 +27,7 @@ const upload = multer({ storage: storage });
 
 
 const storeSchema = new mongoose.Schema({
-    profileImage: {
-      type: String,
-      required: true
-    },
+    profileImage:String,
     name: String,
     address: {
       areaName: {
@@ -82,7 +79,7 @@ const storeSchema = new mongoose.Schema({
       type: String,
       required: false
     },
-    WbsiteUrl: {
+    WebsiteUrl: {
       type: String,
       required: false
     },
@@ -100,25 +97,41 @@ const storeSchema = new mongoose.Schema({
 const Store = mongoose.model('Store', storeSchema);
 
 const productSchema = new mongoose.Schema({
+  picture:String,
   name: String,
   price: Number,
+  description: String,
   storeId: String
 });
 const Product = mongoose.model('Product', productSchema);
 
 
+// uploads pic
+router.post('/upload', upload.single('image'), (req, res) => {
+  const image = req.file;
+
+  if (!image) {
+    return res.status(400).json({ message: 'يرجى تحميل صورة واحدة فقط.' });
+  }
+
+  const imageName = image.filename;
+
+  res.status(200).json({ message: 'تم تحميل الصورة بنجاح!', imageUrl: imageName });
+});
+
+
   // signup store
-router.post('/signup/store',upload.single('profileImage'), async (req, res) => {
+router.post('/signup/Store',upload.single("image"), async (req, res) => {
     try {
       const {
-        name, latitude, longitude, phoneNumbers, landlines, areaName, streetName, buildingNameorNumber, floor, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, password
+        name, latitude, longitude, phoneNumbers, landlines, areaName, streetName, buildingNameorNumber, floor, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WebsiteUrl, WebsiteTitle, category, password
       } = req.body;
-  
-      if (!password || !phoneNumbers || !email || !whatsappNumber ) {
-        return res.status(400).send({ error: 'الهاتف والبريد الإلكتروني وكلمة المرور مطلوبة' });
+      const{profileImage} = req.body;
+      if ( !password || !email || !whatsappNumber ) {
+        return res.status(400).send({ error: 'الهاتف والبريد الإلكتروني وكلمة المرور مطلوبة' ,error});
       }
   
-      const existingStore = await Store.findOne({ $or: [{ email }, { phoneNumbers }, {whatsappNumber}] });
+      const existingStore = await Store.findOne({ $or: [{ email }, {whatsappNumber}] });
       if (existingStore) {
         return res.status(400).send({ error: 'البريد الإلكتروني أو الهاتف موجود بالفعل' });
       }
@@ -132,13 +145,8 @@ router.post('/signup/store',upload.single('profileImage'), async (req, res) => {
         floor
       };
 
-      if (!req.file) {
-        return res.status(400).send({error:'الصورة مطلوبة'});
-      }
-
-
       const store = new Store({
-        profileImage:req.file.path, name, latitude, longitude, phoneNumbers, landlines, address, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WbsiteUrl, WebsiteTitle, category, isVisible: true, password: hashedPassword,
+        profileImage, name, latitude, longitude, phoneNumbers, landlines, address, email, whatsappNumber, instagramAccount, instagramUsername, facebookPage, facebookUsername, WebsiteUrl, WebsiteTitle, category, isVisible: true, password: hashedPassword,
       });
   
       await store.save();
@@ -300,12 +308,14 @@ router.put('/store-info/:storeId',storeAuth , async (req, res) => {
   // Add Product
 router.post('/store/:storeId/products',storeAuth, async (req, res) => {
     const storeId = req.params.storeId;
-    const { name, price } = req.body;
-
+    const { picture, name, price, description } = req.body;
+    
     try {
         const newProduct = new Product({
+            picture,
             name,
             price,
+            description,
             storeId
         });
 
