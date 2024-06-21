@@ -9,6 +9,7 @@ const {storeRouter} = require('./routes/store');
 const path = require('path');
 const userAuth = require('./middleware/user.auth');
 const { error } = require('console');
+const port = process.env.PORT || 8080;
 
 const app = express();
 app.use(express.json());
@@ -20,7 +21,9 @@ app.use(cors());
 mongoose.connect('mongodb+srv://ghaithbirkdar:c4a@cluster0.jb1c741.mongodb.net/dalelcom?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("mongodb connect success.");
-    app.listen(4003)
+    app.listen(port , ()=>{
+      console.log(`Server started on port ${port}`);
+    })
   })
   .catch(err => {
     console.log(err)
