@@ -166,4 +166,4 @@ app.put('/users/:userId' ,userAuth , async (req,res)=> {
 
 app.use(storeRouter)
 
-app.listen(4000, () => console.log('Server started'));
+// app.listen(4000, () => console.log('Server started'));
