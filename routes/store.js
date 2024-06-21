@@ -178,7 +178,7 @@ router.post('/login/store', async (req, res) => {
   // show all stores
 router.get('/stores', async (req,res)=>{
   try{
-      const visiblestores=await Store.find({ isVisible: true }).select('-password');
+      const visiblestores=await Store.find({ isVisible: true }).select('-password').select('-isVisible');
       res.status(200).json({'data':visiblestores});
   }catch (error){
       res.status(500).json({message:error.message})
