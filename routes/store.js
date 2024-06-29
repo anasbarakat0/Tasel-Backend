@@ -61,7 +61,11 @@ const storeSchema = new mongoose.Schema({
       type: Number,
       required: true
     },
-    category: String,
+    category:{ 
+      type: String,
+      required: true,
+      enum:['pharmacy','restaurant','coffee','flowers shop','fastfood','doctor','gym','hotel','bank','teacher']
+    },
     email: String,
     facebookPage: {
       type: String,
@@ -212,7 +216,7 @@ router.put('/stores/:storeId',storeAuth, async (req, res) => {
 // Get Store by ID
 router.get('/store/:id', async (req, res) => {
   try {
-    const store = await Store.findById(req.params.id);
+    const store = await Store.findById(req.params.id).select('-isVisible');
     if (!store) {
       return res.status(404).send();
     }
@@ -247,7 +251,7 @@ router.get('/stores/filter', async (req, res) => {
 
       // تحديد المعايير للفلترة
       if (req.query.areaName) {
-          filters[address.areaName] = req.query.areaName;
+          filters['address.areaName'] = req.query.areaName;
       }
 
       if (req.query.category) {
@@ -255,7 +259,7 @@ router.get('/stores/filter', async (req, res) => {
       }
 
       // تنفيذ الفلترة
-      const stores = await Store.find(filters);
+      const stores = await Store.find(filters).select('-password');
       res.json(stores);
   } catch (error) {
       res.status(500).json({ message: 'Failed to filter stores' });
@@ -405,6 +409,36 @@ function verifyToken(req, res, next) {
         });
     });
 }
+router.get('/categories', async (req, res) => {
+  try {
+    const categories = await Store.distinct('category');
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    res.status(500).json({ message: 'حدث   خطأ   أثناء   جلب   الفئات' });
+  }
+});
+
+
+router.get('/stores/:category/locations', async (req, res) => {
+  try {
+    const category = req.params.category;
+
+  
+    const stores = await Store.find(
+      { category: category }, 
+      { _id: 0, name: 1, latitude: 1, longitude: 1 }
+    ); 
+
+    res.status(200).json(stores);
+  } catch (error) {
+    console.error('Error getting stores by category:', error);
+    res.status(500).json({ message: 'حدث   خطأ   أثناء   جلب   المتاجر' });
+  }
+});
+
+
 
 
   
