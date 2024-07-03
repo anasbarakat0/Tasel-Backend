@@ -40,7 +40,7 @@ const storeSchema = new mongoose.Schema({
       },
       buildingNameorNumber: {
         type: String,
-        required: true
+        required: false
       },
       floor: {
         type: String,
@@ -64,7 +64,7 @@ const storeSchema = new mongoose.Schema({
     category:{ 
       type: String,
       required: true,
-      enum:['pharmacy','restaurant','coffee','flowers shop','fastfood','doctor','gym','hotel','bank','teacher']
+      enum:['pharmacy','restaurant','cafe','graphic designer','flowers shop','fastfood','doctor','gym','hotel','bank','teacher','teaching']
     },
     email: String,
     facebookPage: {
@@ -182,7 +182,7 @@ router.post('/login/store', async (req, res) => {
   // show all stores
 router.get('/stores', async (req,res)=>{
   try{
-      const visiblestores=await Store.find({ isVisible: true }).select('-password').select('-isVisible');
+      const visiblestores=await Store.find({ isVisible: true }).select('-password').select('-isVisible').select('-__v');
       res.status(200).json({'data':visiblestores});
   }catch (error){
       res.status(500).json({message:error.message})
@@ -216,7 +216,7 @@ router.put('/stores/:storeId',storeAuth, async (req, res) => {
 // Get Store by ID
 router.get('/store/:id', async (req, res) => {
   try {
-    const store = await Store.findById(req.params.id).select('-isVisible');
+    const store = await Store.findById(req.params.id).select('-password').select('-__v');
     if (!store) {
       return res.status(404).send();
     }
@@ -301,6 +301,11 @@ router.put('/store-info/:storeId',storeAuth , async (req, res) => {
       storeInfo.address.buildingNameorNumber = req.body.buildingNameorNumber || storeInfo.address.buildingNameorNumber;
       storeInfo.address.floor = req.body.floor || storeInfo.address.floor;
       storeInfo.whatsappNumber = req.body.whatsappNumber || storeInfo.whatsappNumber;
+      storeInfo.phoneNumbers = req.body.phoneNumbers || storeInfo.phoneNumbers;
+      storeInfo.landlines = req.body.landlines || storeInfo.landlines;
+      storeInfo.facebookPage = req.body.facebookPage || storeInfo.facebookPage;
+      storeInfo.instagramAccount = req.body.instagramAccount || storeInfo.instagramAccount;
+      storeInfo.WebsiteUrl = req.body.WebsiteUrl || storeInfo.WebsiteUrl;
       await storeInfo.save();
       res.json(storeInfo);
     } catch (error) {
